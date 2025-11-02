@@ -5,13 +5,24 @@ require_once 'models/User.php';
 require_once 'security.php';
 
 class AuthController {
+    private $pdo;
+
+    public function __construct() {
+        try {
+            $this->pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die("Database connection failed: " . $e->getMessage());
+        }
+    }
+
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             validate_csrf_token();
             $username = trim($_POST['username']);
             $password = trim($_POST['password']);
 
-            $user_model = new User();
+            $user_model = new User($this->pdo);
             $user = $user_model->findByUsername($username);
 
             if ($user && password_verify($password, $user['password'])) {

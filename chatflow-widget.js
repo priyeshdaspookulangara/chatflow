@@ -40,11 +40,11 @@
                         <button type="submit" id="chatflow-send-intro">Send</button>
                     </form>
                 </div>
-                <div id="chatflow-chat-view" style="display: none;">
+                <div id="chatflow-chat-view" style="display: none; flex-direction: column; flex-grow: 1;">
                     <div id="chatflow-messages"></div>
                     <div id="chatflow-footer">
-                        <input type="text" id="chatflow-input" placeholder="Type a message...">
-                        <button id="chatflow-send">Send</button>
+                        <input type="text" id="chatflow-input" placeholder="Enter your message...">
+                        <button id="chatflow-send">&#x25B6;</button>
                     </div>
                 </div>
             </div>
@@ -122,6 +122,49 @@
                 font-size: 1em;
                 cursor: pointer;
             }
+
+            /* Chat View Styles */
+            #chatflow-chat-view { height: 100%; }
+            #chatflow-messages { flex-grow: 1; padding: 20px; overflow-y: auto; }
+            .chatflow-message {
+                margin-bottom: 15px;
+                max-width: 80%;
+                padding: 10px 15px;
+                border-radius: 18px;
+                line-height: 1.4;
+            }
+            .chatflow-message.agent {
+                background-color: #f1f3f5;
+                color: #212529;
+                border-bottom-left-radius: 4px;
+                align-self: flex-start;
+            }
+            .chatflow-message.customer {
+                background-color: #007bff;
+                color: white;
+                border-bottom-right-radius: 4px;
+                align-self: flex-end;
+            }
+            #chatflow-footer {
+                display: flex;
+                padding: 10px 20px;
+                border-top: 1px solid #e9ecef;
+                background-color: #fff;
+            }
+            #chatflow-input {
+                flex-grow: 1;
+                border: none;
+                background: transparent;
+                padding: 10px 0;
+            }
+            #chatflow-input:focus { outline: none; }
+            #chatflow-send {
+                background: none;
+                border: none;
+                font-size: 20px;
+                color: #adb5bd;
+                cursor: pointer;
+            }
         `;
         document.head.appendChild(style);
 
@@ -154,6 +197,7 @@
 
         // --- API Functions ---
         function initChat(customerEmail) {
+            displayWelcomeMessage(); // Show welcome message immediately
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/init.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -177,6 +221,20 @@
                 customer_name: 'Customer', // Or derive from email
                 customer_email: customerEmail
             }));
+        }
+
+        function displayWelcomeMessage() {
+            const welcomeMsg = { sender_type: 'agent', content: "Hi there 👋 If you need any assistance, I'm always here." };
+            appendMessage(welcomeMsg);
+        }
+
+        function appendMessage(msg) {
+            const messagesContainer = document.getElementById('chatflow-messages');
+            const msgElement = document.createElement('div');
+            msgElement.className = `chatflow-message ${msg.sender_type}`;
+            msgElement.textContent = msg.content;
+            messagesContainer.appendChild(msgElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         document.getElementById('chatflow-send').addEventListener('click', function() {
@@ -211,13 +269,13 @@
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const messages = JSON.parse(xhr.responseText);
                     const messagesContainer = document.getElementById('chatflow-messages');
+                    // Find the welcome message if it exists
+                    const welcomeMessage = messagesContainer.querySelector('.chatflow-message.agent');
                     messagesContainer.innerHTML = ''; // Clear existing messages
-                    messages.forEach(msg => {
-                        const msgElement = document.createElement('div');
-                        msgElement.textContent = `[${msg.sender_type}] ${msg.content}`;
-                        messagesContainer.appendChild(msgElement);
-                    });
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    if (welcomeMessage) {
+                        messagesContainer.appendChild(welcomeMessage); // Re-add welcome message
+                    }
+                    messages.forEach(appendMessage);
                 }
             };
             xhr.send();
