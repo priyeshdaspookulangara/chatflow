@@ -20,5 +20,16 @@
         <button type="submit" class="btn btn-primary">Register</button>
     </form>
 </div>
+
+<!-- Add the chatflow widget script -->
+<script>
+    window.ChatFlowConfig = {
+        // This is a dummy key for testing purposes on the registration page.
+        // A real implementation would get a key after registration/login.
+        embedKey: 'DUMMY_KEY_FOR_REGISTRATION_PAGE'
+    };
+</script>
+<script src="/chatflow-widget.js" defer></script>
+
 </body>
 </html>
