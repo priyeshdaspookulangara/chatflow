@@ -1,0 +1,58 @@
+<?php
+require_once '../config.php';
+require_once 'models/User.php';
+
+require_once 'security.php';
+
+class AuthController {
+    public function login() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            validate_csrf_token();
+            $username = trim($_POST['username']);
+            $password = trim($_POST['password']);
+
+            $user_model = new User();
+            $user = $user_model->findByUsername($username);
+
+            if ($user && password_verify($password, $user['password'])) {
+                session_start();
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+                header('Location: /admin/index.php?action=dashboard');
+                exit;
+            } else {
+                // Redirect back to login with an error
+                header('Location: /admin/index.php?error=1');
+                exit;
+            }
+        }
+    }
+
+    public function logout() {
+        session_start();
+        session_unset();
+        session_destroy();
+        header('Location: /admin/index.php');
+        exit;
+    }
+
+    public static function requireAuth() {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /admin/index.php');
+            exit;
+        }
+    }
+
+    public static function requireAdmin() {
+        self::requireAuth();
+        if ($_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            echo "Forbidden";
+            exit;
+        }
+    }
+}
