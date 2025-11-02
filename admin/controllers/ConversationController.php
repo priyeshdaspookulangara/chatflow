@@ -5,13 +5,21 @@ require_once 'models/Conversation.php';
 require_once 'security.php';
 
 class ConversationController {
+    private $pdo;
+
     public function __construct() {
         AuthController::requireAuth();
+        try {
+            $this->pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die("Database connection failed: " . $e->getMessage());
+        }
     }
 
     public function view() {
         if (isset($_GET['id'])) {
-            $conversation_model = new Conversation();
+            $conversation_model = new Conversation($this->pdo);
             $conversation = $conversation_model->findById($_GET['id']);
             $messages = $conversation_model->getMessages($_GET['id']);
 
@@ -32,7 +40,7 @@ class ConversationController {
     public function reply() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'], $_POST['content'])) {
             validate_csrf_token();
-            $conversation_model = new Conversation();
+            $conversation_model = new Conversation($this->pdo);
             $conversation_model->addMessage($_POST['conversation_id'], 'agent', trim($_POST['content']));
             header('Location: /admin/index.php?action=view_conversation&id=' . $_POST['conversation_id']);
             exit;

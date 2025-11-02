@@ -19,6 +19,7 @@ class AuthController {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
+                $_SESSION['status'] = $user['status']; // Set status in session
                 header('Location: /admin/index.php?action=dashboard');
                 exit;
             } else {

@@ -19,11 +19,34 @@
         const chatContainer = document.createElement('div');
         chatContainer.id = 'chatflow-widget-container';
         chatContainer.innerHTML = `
-            <div id="chatflow-header">Live Chat (Click to Close)</div>
-            <div id="chatflow-messages"></div>
-            <div id="chatflow-footer">
-                <input type="text" id="chatflow-input" placeholder="Type a message...">
-                <button id="chatflow-send">Send</button>
+            <div id="chatflow-header">
+                <span class="chatflow-header-back">&lt;</span>
+                <div class="chatflow-header-avatars">
+                    <span></span><span></span><span></span>
+                </div>
+                <span class="chatflow-header-title">Hi there 👋</span>
+                <span class="chatflow-header-close">&hellip;</span>
+            </div>
+            <div id="chatflow-body">
+                <div id="chatflow-pre-chat">
+                    <div class="chatflow-avatar"></div>
+                    <p class="chatflow-intro-text">Please introduce yourself:</p>
+                    <form id="chatflow-intro-form">
+                        <input type="email" id="chatflow-email-input" placeholder="Enter your email..." required>
+                        <div class="chatflow-newsletter">
+                            <input type="checkbox" id="chatflow-newsletter-checkbox">
+                            <label for="chatflow-newsletter-checkbox">Sign up for our newsletter</label>
+                        </div>
+                        <button type="submit" id="chatflow-send-intro">Send</button>
+                    </form>
+                </div>
+                <div id="chatflow-chat-view" style="display: none;">
+                    <div id="chatflow-messages"></div>
+                    <div id="chatflow-footer">
+                        <input type="text" id="chatflow-input" placeholder="Type a message...">
+                        <button id="chatflow-send">Send</button>
+                    </div>
+                </div>
             </div>
         `;
         document.body.appendChild(chatContainer);
@@ -31,6 +54,7 @@
         // --- Add CSS Styling ---
         const style = document.createElement('style');
         style.innerHTML = `
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
             #chatflow-bubble {
                 position: fixed;
                 bottom: 20px;
@@ -46,52 +70,56 @@
                 font-size: 30px;
                 cursor: pointer;
                 z-index: 9998;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             }
             #chatflow-widget-container {
                 position: fixed;
-                bottom: 20px;
+                bottom: 90px; /* Position above the bubble */
                 right: 20px;
-                width: 320px;
-                height: 450px;
-                border: 1px solid #ccc;
-                border-radius: 10px;
-                display: none; /* Initially hidden */
+                width: 350px;
+                border: none;
+                border-radius: 16px;
+                display: none;
                 flex-direction: column;
-                background-color: white;
+                background-color: #f8f9fa; /* Light grey background */
                 z-index: 9999;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                overflow: hidden;
             }
             #chatflow-header {
-                background-color: #007bff;
-                color: white;
-                padding: 15px;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
-                cursor: pointer;
-            }
-            #chatflow-messages {
-                flex-grow: 1;
-                overflow-y: auto;
-                padding: 15px;
-            }
-            #chatflow-footer {
                 display: flex;
-                padding: 10px;
-                border-top: 1px solid #eee;
+                align-items: center;
+                padding: 12px 15px;
+                background-color: #fff;
+                border-bottom: 1px solid #e9ecef;
             }
-            #chatflow-input {
-                flex-grow: 1;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                padding: 10px;
+            .chatflow-header-back, .chatflow-header-close { font-size: 24px; color: #6c757d; cursor: pointer; }
+            .chatflow-header-back { visibility: hidden; } /* Hidden by default */
+            .chatflow-header-title { flex-grow: 1; text-align: center; font-weight: 500; color: #212529; }
+            .chatflow-header-avatars { display: flex; margin: 0 10px; }
+            .chatflow-header-avatars span { width: 24px; height: 24px; border-radius: 50%; background-color: #e9ecef; border: 2px solid #fff; margin-left: -8px; }
+            #chatflow-body { padding: 20px; background-color: #fff; border-radius: 0 0 16px 16px; }
+            #chatflow-pre-chat { text-align: center; }
+            .chatflow-avatar { width: 60px; height: 60px; border-radius: 50%; background-color: #e9ecef; margin: 0 auto 15px; }
+            .chatflow-intro-text { font-weight: bold; font-size: 1.1em; margin-bottom: 20px; color: #343a40; }
+            #chatflow-intro-form input[type="email"] {
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ced4da;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                box-sizing: border-box;
             }
-            #chatflow-send {
-                margin-left: 10px;
+            .chatflow-newsletter { display: flex; align-items: center; margin-bottom: 20px; font-size: 0.9em; color: #495057; }
+            .chatflow-newsletter input { margin-right: 8px; }
+            #chatflow-intro-form button {
+                width: 100%;
+                padding: 12px;
                 background-color: #007bff;
                 color: white;
                 border: none;
-                padding: 10px 15px;
-                border-radius: 5px;
+                border-radius: 8px;
+                font-size: 1em;
                 cursor: pointer;
             }
         `;
@@ -99,21 +127,33 @@
 
         // --- Event Listeners ---
         chatBubble.addEventListener('click', toggleChat);
-        document.getElementById('chatflow-header').addEventListener('click', toggleChat);
+        document.querySelector('.chatflow-header-close').addEventListener('click', toggleChat);
+
+        document.getElementById('chatflow-intro-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('chatflow-email-input');
+            const userEmail = emailInput.value.trim();
+            if (userEmail) {
+                // Transition to chat view
+                document.getElementById('chatflow-pre-chat').style.display = 'none';
+                document.getElementById('chatflow-chat-view').style.display = 'flex';
+                document.querySelector('.chatflow-header-back').style.visibility = 'visible';
+
+                // Initialize the chat session
+                if (!window.ChatFlowConfig.conversationId) {
+                    initChat(userEmail);
+                }
+            }
+        });
 
         function toggleChat() {
             isChatOpen = !isChatOpen;
             chatContainer.style.display = isChatOpen ? 'flex' : 'none';
             chatBubble.style.display = isChatOpen ? 'none' : 'flex';
-
-            // Initialize chat on first open
-            if (isChatOpen && !window.ChatFlowConfig.conversationId) {
-                initChat();
-            }
         }
 
         // --- API Functions ---
-        function initChat() {
+        function initChat(customerEmail) {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/init.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -134,8 +174,8 @@
             xhr.send(JSON.stringify({
                 embed_key: embedKey,
                 hostname: hostname,
-                customer_name: 'Guest',
-                customer_email: 'guest@example.com'
+                customer_name: 'Customer', // Or derive from email
+                customer_email: customerEmail
             }));
         }
 
